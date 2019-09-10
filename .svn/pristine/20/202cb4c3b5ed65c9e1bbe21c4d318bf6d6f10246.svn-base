@@ -1,0 +1,39 @@
+function [front_freq_map,grd] = frontal_frequency_cal(filepath,files,depth,lon_w,lon_e,lat_s,lat_n,datatype,dtcrit,logic_field_smooth,skip)
+nt=length(files);
+if strcmp(datatype,'roms')
+    [~,grd]=roms_preprocess([filepath,files(1).name],depth,lon_w,lon_e,lat_s,lat_n,logic_field_smooth,skip);
+elseif strcmp(datatype,'mercator')
+    [~,grd]=mercator_preprocess([filepath,files(1).name],depth,lon_w,lon_e,lat_s,lat_n,logic_field_smooth,skip);
+elseif strcmp(datatype,'ostia')
+    [~,grd]=ostia_preprocess([filepath,files(1).name],lon_w,lon_e,lat_s,lat_n,logic_field_smooth);
+end
+    [m,n]=size(grd.mask_rho);
+    frontal_occur_no=zeros(m,n);
+    front_freq_map=zeros(m,n);    
+for it=1:nt
+    it;
+    fn=files(it).name;
+    %data preprocess
+    if strcmp(datatype,'roms')
+        [temp_zl,grd]=roms_preprocess([filepath,fn],depth,lon_w,lon_e,lat_s,lat_n,logic_field_smooth,skip);
+    elseif strcmp(datatype,'mercator')
+        [temp_zl,grd]=mercator_preprocess([filepath,fn],depth,lon_w,lon_e,lat_s,lat_n,logic_field_smooth,skip);
+    elseif strcmp(datatype,'ostia')
+        [temp_zl,grd]=ostia_preprocess([filepath,fn],lon_w,lon_e,lat_s,lat_n,logic_field_smooth);            
+    end
+    [txgrad,tygrad] = grad_sobel(temp_zl,grd.pm,grd.pn);
+    tgrad = (txgrad .^ 2 + tygrad .^ 2) .^ 0.5;
+    % tgrad(tgrad > dtcrit_max) = 0;
+    % tgrad(temp_zl==0) = 0;
+    tangle = atan2(tygrad,txgrad) / pi * 180;
+    for i=1:m
+        for j=1:n
+            if ~isnan(tgrad(i,j)) && tgrad(i,j)>dtcrit
+                frontal_occur_no(i,j)= frontal_occur_no(i,j)+1;
+            end
+        end
+    end
+    front_freq_map=frontal_occur_no/nt;
+    front_freq_map(grd.mask_rho==0)=NaN;
+     
+end

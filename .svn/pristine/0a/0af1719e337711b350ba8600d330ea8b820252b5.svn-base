@@ -1,0 +1,35 @@
+function [var_smooth]=variable_smooth(var,smooth_type,fill_value,sigma,N)
+% variable preprocess smooth 
+%
+% Input:
+% Output:
+if ndims(var)~=2
+    error(message('variable dimension must be equal to 2'))
+end
+[m,n]=size(var);
+mask=ones(m,n);
+mask(var==fill_value)=0;
+var1=var;
+var1(mask==0)=NaN;
+for nt=1:500
+    nan_number=length(find(isnan(var1(:))==1));
+    if nan_number~=0
+        [var1]=extra_interp_2d(var1);    
+    else
+        break
+    end
+end
+if strcmp(smooth_type,'average')
+    var_smooth=filter2(fspecial('average',3),var1);
+elseif strcmp(smooth_type,'gaussian')
+    N_row = 2*N+1;
+    gausFilter = fspecial('gaussian',[N_row N_row],sigma);
+    var_smooth = imfilter(var1,gausFilter,'conv');
+elseif strcmp(smooth_type,'no_smooth') 
+    var_smooth=var1;
+end
+    %replace  boundary value with old variable
+    var_smooth(1:N,:)=var1(1:N,:);
+    var_smooth(end-N+1:end,:)=var1(end-N+1:end,:);
+    var_smooth(:,1:N)=var1(:,1:N);
+    var_smooth(:,end-N+1:end)=var1(:,end-N+1:end);

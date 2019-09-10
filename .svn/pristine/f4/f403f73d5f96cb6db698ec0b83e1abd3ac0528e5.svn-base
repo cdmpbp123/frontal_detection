@@ -1,0 +1,32 @@
+function [tfrontarea] = front_area(fronta,tgrad,tangle,grd,Ct_crit)
+%
+fnum = 0;
+for m = 1:500
+    [row,col] = find(fronta,1); 
+    if isempty(row)
+        break
+    end
+    Ct = contour_following(fronta);
+    fronta(Ct(:,1),Ct(:,2)) = 0;
+    if size(Ct,1) > Ct_crit
+        sum_tgrad=tgrad(Ct(1,1),Ct(1,2));
+        for n = 1:size(Ct,1)-1
+            sum_tgrad=sum_tgrad+tgrad(Ct(n,1),Ct(n,2));
+        end
+        mean_tgrad=sum_tgrad/size(Ct,1);
+        fnum = fnum + 1;
+        for n = 1:size(Ct,1)
+            eval(['tfrontarea.f',num2str(fnum),'(n,1) = grd.lon_rho(Ct(n,1),Ct(n,2));']);
+            eval(['tfrontarea.f',num2str(fnum),'(n,2) = grd.lat_rho(Ct(n,1),Ct(n,2));']);
+            eval(['tfrontarea.f',num2str(fnum),'(n,3) = tgrad(Ct(n,1),Ct(n,2));']);
+            eval(['tfrontarea.f',num2str(fnum),'(n,4) = tangle(Ct(n,1),Ct(n,2));']);
+        end
+        tfrontarea.mtgrad(fnum)=mean_tgrad;
+    end
+           
+tfrontarea.fnum = fnum;    
+end
+if fnum==0
+tfrontarea=[];
+end
+end

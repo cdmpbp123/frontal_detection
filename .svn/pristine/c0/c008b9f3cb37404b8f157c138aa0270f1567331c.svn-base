@@ -1,0 +1,27 @@
+function dumping_frontal_line_stats(tfrontline,tfnc_output)
+%
+nc_create_empty(tfnc_output,'clobber');
+nc_adddim(tfnc_output,'front_no',0);
+nc_adddim(tfnc_output,'fdimension',4);
+
+varstruct.Name = 'front_length';
+varstruct.Nctype = 'double';
+varstruct.Dimension = { 'front_no' };       
+nc_addvar(tfnc_output,varstruct);       
+nc_varput(tfnc_output,'front_length',tfrontline.flen);
+
+varstruct.Name = 'mean_tfront';
+varstruct.Nctype = 'double';
+varstruct.Dimension = { 'front_no' };       
+nc_addvar(tfnc_output,varstruct);       
+nc_varput(tfnc_output,'mean_tfront',tfrontline.mtgrad);
+for nn=1:tfrontline.fnum
+	eval(['nc_adddim(tfnc_output,''front_no' num2str(nn) ''',length(tfrontline.f' num2str(nn) '));']);
+	eval(['varstruct.Name = ''f' num2str(nn) ''';']);
+	varstruct.Nctype = 'double';
+	eval(['varstruct.Dimension = {''front_no' num2str(nn) ''' ,''fdimension''};']);
+	nc_addvar(tfnc_output,varstruct);
+	eval(['nc_varput(tfnc_output,''f' num2str(nn) ''',tfrontline.f' num2str(nn)  ');']);
+end
+
+end

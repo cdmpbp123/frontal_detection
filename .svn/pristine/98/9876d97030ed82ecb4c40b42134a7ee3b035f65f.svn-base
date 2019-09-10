@@ -1,0 +1,185 @@
+function [tfrontline,thresh_out] = front_line(temp_zl,thresh_in,grd,flen_crit,logic_morph)
+% front_line - extract frontal line and dumping frontline to the struct variable 
+%
+% Usage: [tfrontline,thresh_out] = front_line(temp_zl,thresh_in,grd,flen_crit,logic_morph)
+%
+% Input:
+%   temp_zl - temperature variable
+%   thresh_in - threshold input
+%   grd - grid info
+%   flen_crit - length criterion for detecting front
+%   logic_morph - switch of morphology processing
+%
+% Output:
+%   tfrontline - frontal line detect result (struct array)
+%   thresh_out - threshold output
+%% =========================================================
+[txgrad,tygrad] = grad_sobel(temp_zl,grd.pm,grd.pn,grd.mask_rho);
+tgrad = sqrt(txgrad .^ 2 + tygrad .^ 2);
+%注意此方向为梯度方向（横锋方向）；tangle+90°为垂直梯度方向（沿锋方向）
+tangle = atan2d(tygrad,txgrad);
+disp('Canny edge detection...')
+[bw, thresh_out] = fn_edge(temp_zl,'canny_new',txgrad,tygrad,tgrad,tangle,thresh_in);
+%necessary morphological processing to detect frontal line
+%remove isolated frontal pixels
+bw = bwmorph(bw,'clean'); 
+% remove H-connect pixels
+bw = bwmorph(bw,'hbreak');
+%Make sure that edges are thinned or nearly thinned  
+bw2 = bwmorph(bw,'thin', Inf);
+% %% test edgelink module
+% gapsize = 25;
+% bw2 = filledgegaps(bw2, gapsize);
+%%
+%extract and identify frontal lines
+[segment,num] = bwlabel(bw2,8); 
+[sector]  = sector_dividing(tangle);
+% frontal lines number initialization
+ff = 0;
+for ifr = 1 : num
+    [row, col] = find(segment == ifr);
+    bw_ifr = bwselect(bw2, col, row, 8);
+    bw_sector = bw_ifr.*sector;
+% bw_tangle = bw_ifr.*tangle;
+    [N,neigh_num] = find_neighbor_info(bw2,row,col);
+    % find endpoint index
+    neigh1 = find( neigh_num  ==  1 );  
+    for i1 = 1 : length(neigh1)
+        start_prow = row(neigh1(i1));
+        start_pcol = col(neigh1(i1));
+        if bw_ifr(start_prow,start_pcol) ~= 0
+            bw_ifr(start_prow,start_pcol) = 0;
+            ip = neigh1(i1);
+            % frontal pixel order 
+            porder = [ip];  
+            next_prow = N{ip}.row;
+            next_pcol = N{ip}.col;
+            for m = 1 : length(row)*2
+                if isempty(next_prow) == 0 && isempty(next_pcol) == 0
+                    prow = next_prow;
+                    pcol = next_pcol;
+                    [ip] = find(row(:) == next_prow & col(:) == next_pcol);
+                    if neigh_num(ip) == 1
+                        % this is an extreme case for two-point front 
+                        porder = [porder ip];
+                        bw_ifr(prow,pcol) = 0;
+                        next_prow = [];
+                        next_pcol = [];
+                        ff = ff+1; % 锋面判别终止，数量更新
+                        break
+                    elseif neigh_num(ip) == 2
+                        porder = [porder ip];
+                        bw_ifr(prow,pcol) = 0;
+                        rr = N{ip}.row;
+                        cc = N{ip}.col;
+                        for j = 1:2
+                            L(j) = (rr(j) == start_prow) & (cc(j) == start_pcol);
+                        end
+                        LL = find(L ~= 1);
+                        next_prow = rr(LL);
+                        next_pcol = cc(LL);
+                        start_prow = prow;
+                        start_pcol = pcol;
+                        continue  % 继续寻找下一个相邻锋面像素
+                    elseif neigh_num(ip) >=3
+                        p_sector= bw_sector(prow,pcol);
+                        bw_ifr(prow,pcol)=0;
+                        [rr,cc]=find_sector_neighbor(p_sector,prow,pcol,'along');
+                        %如像素点8邻域两端均有锋面像素点，确定其连线为锋面
+                        if bw_sector(rr(1),cc(1))~=0 && bw_sector(rr(2),cc(2))~=0
+                            if (start_prow== rr(1) && start_pcol == cc(1))
+                                next_prow = rr(2);
+                                next_pcol = cc(2);
+                                porder=[porder ip];
+                            elseif (start_prow== rr(2) && start_pcol == cc(2))
+                                next_prow = rr(1);
+                                next_pcol = cc(1);
+                                porder=[porder ip];
+                            else
+                                ff=ff+1; % 锋面判别终止，数量更新
+                                break
+                            end
+                            start_prow = prow;
+                            start_pcol = pcol;
+                        else  %相邻3点均不位于梯度方向，只有两种情况，而且只能有3个相邻点
+                            for j=1:2
+                                L1(j)=neighbor8_decide(rr(j),cc(j),start_prow,start_pcol);
+                                L2(j)=(bw_ifr(rr(j),cc(j))==1);
+                                L3(j)=(rr(j)==start_prow) & (cc(j)==start_pcol);
+                                %找到不与起始点相邻的锋面像素点
+                                L(j)= (~L1(j)) & (L2(j)) & (~L3(j));
+                            end
+                            Lnum=length(find(L==1));
+                            if Lnum==0 || Lnum==2
+                                %如在沿梯度方向没找到锋面像素点
+                                bw_ifr(prow,pcol)=0;
+                                porder=[porder ip];
+                                ff=ff+1; % 锋面判别终止，数量更新
+                                break
+                            elseif Lnum==1
+                                next_prow=rr(find(L==1));
+                                next_pcol=cc(find(L==1));
+                                bw_ifr(prow,pcol)=0;
+                                porder=[porder ip];
+                                start_prow = prow;
+                                start_pcol = pcol;
+                                continue
+                            end
+                        end
+                    end                  
+                end
+            end
+            M{ff}.order=porder;
+            M{ff}.row=row(porder);
+            M{ff}.col=col(porder);
+        end
+    end
+    clear N
+end
+% 统计锋面信息
+bw_new=zeros(size(temp_zl));
+for ifr=1:ff
+    r=M{ifr}.row;
+    c=M{ifr}.col;
+    for ip=1:length(r)
+        M{ifr}.lon(ip)=grd.lon_rho(r(ip),c(ip));
+        M{ifr}.lat(ip)=grd.lat_rho(r(ip),c(ip));
+        M{ifr}.tgrad(ip)=tgrad(r(ip),c(ip));
+        M{ifr}.tangle(ip)=tangle(r(ip),c(ip));
+        bw_new(r(ip),c(ip))=1;
+    end
+    flen=0;
+    for ip = 1:length(r)-1
+        flen = flen + spheric_dist(grd.lat_rho(r(ip),c(ip)), ...
+            grd.lat_rho(r(ip+1),c(ip+1)), grd.lon_rho(r(ip),c(ip)), ...
+            grd.lon_rho(r(ip+1),c(ip+1)));
+    end
+    M{ifr}.flen=flen;
+    M{ifr}.mean_tgrad=nanmean(M{ifr}.tgrad);
+end
+%% post-processing 
+%提取长度大于flen_crit的锋面
+bw_flen=zeros(size(temp_zl));
+fnum = 0;
+for ifr=1:ff
+    r=M{ifr}.row;
+    c=M{ifr}.col;
+    flen = M{ifr}.flen;
+    if flen > flen_crit
+        fnum = fnum +1 ;
+        tfrontline{fnum}=M{ifr};
+        for ip = 1:length(r)
+            bw_flen(r(ip),c(ip))=1;
+        end
+    end
+end
+if logic_morph
+    % deal with morphology operator to connect neighbor segment
+    %bw2=bwmorph(bw1,'close',Inf);  % close操作会将非锋面点改为锋面点，在后续操作会报错，考虑将形态学变换放在后面   
+end
+%
+if fnum==0
+    tfrontline=[];
+    disp('no detected frontline')
+end
+%

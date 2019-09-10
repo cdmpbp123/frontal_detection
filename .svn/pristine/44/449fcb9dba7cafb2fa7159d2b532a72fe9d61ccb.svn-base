@@ -1,0 +1,12 @@
+function [xgrad,ygrad] = grad_sobel(t,pm,pn)
+%Caculate gradient wiht Sobel method
+%
+%cff =  [1 0 1; -2 0 2; -1 0 -1];
+%maybe wrong for convolution calculation?
+cff =  [-1 0 1; -2 0 2; -1 0 1]; % change by rensh 2015/06/10
+xgrad = conv2(t,cff,'same') / 8;
+ygrad = conv2(t,cff','same') / 8;
+xgrad = xgrad .* pm * 1000;
+ygrad = ygrad .* pn * 1000;
+xgrad(:,1)=NaN;xgrad(:,end)=NaN;
+ygrad(1,:)=NaN;ygrad(end,:)=NaN;

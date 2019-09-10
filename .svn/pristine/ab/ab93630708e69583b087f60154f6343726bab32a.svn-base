@@ -1,0 +1,15 @@
+function dumping_frontal_area_stats(tfrontarea,tfnc_output)
+%
+nc_create_empty(tfnc_output,'clobber');
+nc_adddim(tfnc_output,'front_no',0);
+nc_adddim(tfnc_output,'fdimension',4);
+for nn=1:tfrontarea.fnum
+	eval(['nc_adddim(tfnc_output,''front_no' num2str(nn) ''',length(tfrontarea.f' num2str(nn) '));']);
+	eval(['varstruct.Name = ''f' num2str(nn) ''';']);
+	varstruct.Nctype = 'double';
+	eval(['varstruct.Dimension = {''front_no' num2str(nn) ''' ,''fdimension''};']);
+	nc_addvar(tfnc_output,varstruct);
+	eval(['nc_varput(tfnc_output,''f' num2str(nn) ''',tfrontarea.f' num2str(nn)  ');']);
+end
+
+end

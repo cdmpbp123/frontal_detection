@@ -1,0 +1,60 @@
+function [eout,thresh] = fn_edge(a,method,pm,pn,thresh,t,dtcrit)
+%This function rewrite from edge.m in MATLAB
+%
+% Check that the user specified a valid number of output arguments
+if ~any(strcmp(method,{'sobel','roberts','prewitt'})) && (nargout>2)
+    error(message('images:edge:tooManyOutputs'))
+end
+
+% Transform to a double precision intensity image if necessary
+if ~isa(a,'double') && ~isa(a,'single')
+    a = im2single(a);
+end
+
+[m,n] = size(a);
+
+% The output edge map:
+e = false(m,n);
+
+if strcmp(method,'canny')
+    % Magic numbers
+    PercentOfPixelsNotEdges = .7; % Used for selecting thresholds
+   %   ThresholdRatio = 1.0;          % Low thresh is this fraction of the high.  changed by rensh 2015/07/07
+  ThresholdRatio = .4;          % Low thresh is this fraction of the high.
+    
+    % Calculate gradients using a derivative of Gaussian filter
+    %[dx, dy] = smoothGradient(a, sigma);
+    [dx, dy] = grad_sobel(a,pm,pn);
+    % Calculate Magnitude of Gradient
+    magGrad = hypot(dx, dy);
+    %
+    % Normalize for threshold selection
+    magmax = max(magGrad(:));
+    %
+    if strcmp(t,'temp')
+%        magGrad(magGrad < dtcrit) = 0;
+       magGrad(magGrad > 0.7) = 0;
+    elseif strcmp(t,'salt')
+%       magGrad(magGrad < dtcrit) = 0;
+       magGrad(magGrad > 0.9) = 0;
+    end
+
+    
+    % Determine Hysteresis Thresholds
+%    [lowThresh, highThresh] = selectThresholds(thresh, magGrad, PercentOfPixelsNotEdges, ThresholdRatio, mfilename);
+    [lowThresh, highThresh] = selectThresholds(thresh, magGrad, PercentOfPixelsNotEdges, ThresholdRatio);
+
+    % Perform Non-Maximum Suppression Thining and Hysteresis Thresholding of Edge
+    % Strength
+    e = thinAndThreshold(e, dx, dy, magGrad, lowThresh, highThresh);
+    thresh = [lowThresh highThresh];
+    
+
+    
+end
+
+if nargout==0,
+    imshow(e);
+else
+    eout = e;
+end

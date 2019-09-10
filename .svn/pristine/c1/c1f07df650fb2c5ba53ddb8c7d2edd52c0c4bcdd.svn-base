@@ -1,0 +1,83 @@
+function [eout,thresh_out] = edge_localization(var,magGrad,tangle,thresh_in)
+% edge localization
+% This function rewrite from edge.m in MATLAB
+% Input;
+%
+% Output:
+[m,n] = size(var);
+% ---------user define parameter------------------------------------%
+% Low thresh is this fraction of the high threshold.
+ThresholdRatio = 0.4;
+% Low and high frequency for histgram
+low_freq = 0.8;
+high_freq = 0.9;
+% -----------------------------------------------------------%
+% Determine Hysteresis Thresholds
+[lowThresh, highThresh] = thresh_select(thresh_in, low_freq, high_freq, magGrad, ThresholdRatio);
+thresh_out =[lowThresh, highThresh];
+% edge localisation
+canny1=zeros(m,n);
+canny2=zeros(m,n);
+eout=zeros(m,n);
+[sector]=sector_dividing(tangle);
+for im=2:m-1
+    for in=2:n-1
+        if sector(im,in)==1
+            if ( magGrad(im,in)>magGrad(im+1,in) && magGrad(im,in)>magGrad(im-1,in) )
+                canny1(im,in)=magGrad(im,in);
+            else
+                canny1(im,in)=0;
+            end
+        elseif sector(im,in)==2
+            if ( magGrad(im,in)>magGrad(im+1,in+1) && magGrad(im,in)>magGrad(im-1,in-1) )
+                canny1(im,in)=magGrad(im,in);
+            else
+                canny1(im,in)=0;
+            end
+        elseif sector(im,in)==3
+            if ( magGrad(im,in)>magGrad(im,in+1) && magGrad(im,in)>magGrad(im,in-1) )
+                canny1(im,in)=magGrad(im,in);
+            else
+                canny1(im,in)=0;
+            end
+        elseif sector(im,in)==4
+            if ( magGrad(im,in)>magGrad(im+1,in-1) && magGrad(im,in)>magGrad(im-1,in+1) )
+                canny1(im,in)=magGrad(im,in);
+            else
+                canny1(im,in)=0;
+            end
+        end
+    end
+end
+%---------------------------------
+%Hysteresis Thresholds detection
+for im = 2:(m-1)
+    for in = 2:(n-1)
+        if canny1(im,in)<lowThresh %low threshold
+            canny2(im,in) = 0;
+            eout(im,in) = 0;
+            continue;
+        elseif canny1(im,in)>highThresh %high threshold
+            canny2(im,in) = canny1(im,in);
+            eout(im,in) = 1;
+            continue;
+        else %介于之间的看其8领域有没有高于高阈值的，有则可以为边缘
+            neighbor8 =[canny1(im-1,in-1), canny1(im-1,in), canny1(im-1,in+1);
+                canny1(im,in-1),    canny1(im,in),   canny1(im,in+1);
+                canny1(im+1,in-1), canny1(im+1,in), canny1(im+1,in+1)];
+            temMax = max(neighbor8(:));
+            if temMax > highThresh
+                canny2(im,in) = temMax(1);
+                eout(im,in) = 1;
+                continue;
+            else
+                canny2(im,in) = 0;
+                eout(im,in) = 0;
+                continue;
+            end
+        end
+    end
+end
+end
+
+

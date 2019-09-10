@@ -1,0 +1,30 @@
+function [r,c,min] = find_least_direction_change(center_row,center_col,neigh_row,neigh_col,tangle)
+% selects the edge pixel that least changes the direction of the front line to become the next pixel of the line
+% Input:
+%   p_sector - gradient direction index based on sector_dividing8.m
+%   prow -  row index for frontal center line pixel
+%   pcol - column index for frontal center line pixel
+%   tangle - pixel front direction, range from 0~360
+% Ouput:
+%   neigh_prow - row index for neighbor pixel
+%   neigh_pcol - column index for neighbor pixel
+%%
+neigh_no = length(neigh_row);
+for i = 1:neigh_no
+    nrow = neigh_row(i);
+    ncol = neigh_col(i);
+    angle_diff(i) = abs(tangle(center_row,center_col)-tangle(nrow,ncol));
+end
+mk = find( abs(angle_diff) > 180 );
+angle_diff(mk) = 360 - angle_diff(mk);
+[ min , index ] = nanmin(angle_diff);
+if min > 90
+    r = [];
+    c = [];
+    min = [];
+else
+    r = neigh_row(index);
+    c = neigh_col(index);
+end
+
+return

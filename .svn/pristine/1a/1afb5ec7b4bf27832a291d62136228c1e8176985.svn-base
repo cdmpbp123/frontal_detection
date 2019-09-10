@@ -1,0 +1,112 @@
+function [tfrontarea] = front_area(tfrontline,temp_zl,grd,thresh)
+%detect frontarea edge line
+%
+%
+lon=grd.lon_rho;
+lat=grd.lat_rho;
+lowThresh = thresh(1);
+highThresh = thresh(2);
+[txgrad,tygrad] = grad_sobel(temp_zl,grd.pm,grd.pn,grd.mask_rho);
+tgrad = sqrt(txgrad .^ 2 + tygrad .^ 2);
+%注意此方向为梯度方向（横锋方向); tangle+90°为垂直梯度方向（沿锋方向）
+tangle = atan2d(tygrad,txgrad);
+[sector] = sector_dividing(tangle);
+fronta = zeros(size(tgrad));
+fronta(tgrad > highThresh) = 1;
+% % fronta预处理
+% fronta = bwmorph(fronta,'close',Inf);
+% fronta = bwmorph(fronta,'clean');
+%
+fnum=length(tfrontline);
+for ifr=1:fnum
+    row = tfrontline{ifr}.row;
+    col = tfrontline{ifr}.col;
+    pnum = length(row);
+    for  ip = 1:pnum
+        %frontline as the central line to extract front zone
+        pcenter_row = row(ip);
+        pcenter_col = col(ip);
+        pcenter_sector = sector(pcenter_row,pcenter_col);
+        pcenter_tangle = tangle(pcenter_row,pcenter_col);
+        [r0,c0] = find_sector_neighbor(pcenter_sector,pcenter_row,pcenter_col,'across');
+        width = zeros(2,1);
+        % 记录锋区边缘点和横锋方向锋区点
+        for ii=1:2
+            % 初始化
+            brdy_row(ii) = pcenter_row;
+            brdy_col(ii) = pcenter_col;
+            frow = [pcenter_row];
+            fcol = [pcenter_col];
+            start_prow = pcenter_row;
+            start_pcol = pcenter_col;
+            prow = r0(ii);
+            pcol = c0(ii);
+            if fronta(prow,pcol)~=1
+                BB{ii}.row = frow;
+                BB{ii}.col = fcol;
+                continue
+            else
+                width(ii)= spheric_dist(lat(start_prow,start_pcol), ...
+                    lat(prow,pcol), lon(start_prow,start_pcol), lon(prow,pcol));
+                frow = [frow prow];
+                fcol = [fcol pcol];
+            end
+            % 循环寻找边界点
+            for m=1:length(row)*2
+                psector= sector(prow,pcol);
+                [rr,cc]=find_sector_neighbor(psector,prow,pcol,'across');
+                for j=1:2
+                    L1(j)=neighbor8_decide(rr(j),cc(j),start_prow,start_pcol);
+                    L3(j)=(rr(j)==start_prow) & (cc(j)==start_pcol);
+                    %找到不与起始点相邻的锋面像素点
+                    L(j)= (~L1(j)) & (~L3(j));
+                end
+                next_prow=rr(find(L==1));
+                next_pcol=cc(find(L==1));
+                if fronta(next_prow,next_pcol)==1 & isnan(tgrad(next_prow,next_pcol))~=1
+                    width(ii)= width(ii) + spheric_dist(lat(next_prow,next_pcol), ...
+                        lat(prow,pcol), lon(next_prow,next_pcol),lon(prow,pcol));
+                    frow = [frow next_prow];
+                    fcol = [fcol next_pcol];
+                else
+                    brdy_row(ii)=prow;
+                    brdy_col(ii)=pcol;
+                    break
+                end
+                %更新迭代
+                start_prow=prow;
+                start_pcol=pcol;
+                prow=next_prow;
+                pcol=next_pcol;
+            end
+            BB{ii}.row = frow;
+            BB{ii}.col = fcol;
+        end
+        row_left = fliplr(BB{2}.row(2:end));
+        row_right = BB{1}.row;
+        col_left = fliplr(BB{2}.col(2:end));
+        col_right = BB{1}.col;
+        across_row =  [row_left row_right];
+        across_col = [col_left col_right];
+        across_fronta{ip}.row = across_row;
+        across_fronta{ip}.col =  across_col;
+        for ii = 1:length(across_row)
+            across_fronta{ip}.lon(ii) = grd.lon_rho(across_row(ii),across_col(ii));
+            across_fronta{ip}.lat(ii) = grd.lat_rho(across_row(ii),across_col(ii));
+            across_fronta{ip}.tgrad(ii) = tgrad(across_row(ii),across_col(ii));
+        end
+        across_fronta{ip}.width = width(1) + width(2);
+        across_fronta{ip}.brdy_row = [across_row(1) across_row(end)];
+        across_fronta{ip}.brdy_col = [across_col(1) across_col(end)];
+        %
+        across_fronta_width(ip) =  width(1) + width(2);
+    end
+    max_width(ifr) = max(across_fronta_width);
+    mean_width(ifr) = mean(across_fronta_width);
+    
+    tfrontarea{ifr} = across_fronta;
+    clear BB across_fronta
+end
+% 锋面面积，需要把外轮廓识别出来，计算多边形面积，参考GIS的做法
+% 或者计算所有锋面格点的面积之和
+end

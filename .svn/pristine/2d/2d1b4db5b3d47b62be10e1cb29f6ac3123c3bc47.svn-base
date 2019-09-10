@@ -1,0 +1,226 @@
+function [tfrontline,bw_final,thresh_out] = front_line(temp_zl,thresh_in,grd,flen_crit,logic_morph)
+% front_line - extract frontal line from SST and dumping frontline to the struct variable
+%    
+% Usage: [tfrontline,thresh_out] = front_line(temp_zl,thresh_in,grd,flen_crit,logic_morph)
+%
+% Input:
+%   temp_zl - 2D temperature variable after preprocessing
+%   thresh_in - threshold input (C/km)
+%   grd - struct variable of grid info
+%   flen_crit - length criterion for detecting front (unit: m)
+%   logic_morph - switch of morphology processing (0 or 1)
+%
+% Output:
+%   tfrontline - struct variable of frontal line detect result 
+%   thresh_out - threshold output (C/km)
+%   bw_final - final binary image
+%%
+%set test figure output switch
+global fig_test  fig_path_test line_width
+global lat_s lat_n lon_w lon_e
+[tgrad, tangle] = get_front_variable(temp_zl,grd);
+% [sector8] = sector_dividing8(tangle);
+%% edge localization
+disp('edge localization...')
+[bw, thresh_out] = edge_localization(temp_zl,tgrad,tangle,thresh_in);
+if fig_test
+    [rj0, cj0, re0, ce0] = findendsjunctions(bw);
+    fig_test_fn = [fig_path_test,'sst_frontline_after_localization.png'];
+    lon = grd.lon_rho;
+    lat = grd.lat_rho;
+    temp_zl(grd.mask_rho==0) = NaN;
+    figure('visible','on')
+    m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]);
+    P=m_pcolor(lon,lat,temp_zl);
+    set(P,'LineStyle','none');
+    shading interp
+    hold on
+    % frontline pixel overlaid
+    [segment,fnum] = bwlabel(bw,8);
+    for ifr = 1:fnum
+        [row, col] = find(segment == ifr);
+        for ip = 1:length(row)
+            plon(ip) = lon(row(ip),col(ip));
+            plat(ip) = lat(row(ip),col(ip));
+        end
+        [x,y] = m_ll2xy(plon,plat);
+        scatter(x,y,line_width,'k','fill','o')
+        hold on
+        clear plon plat x y
+        clear row col
+    end
+    %  caxis([15 30])
+    colorbar
+    colormap(jet);
+    m_gshhs_i('patch',[.7 .7 .7],'edgecolor','none');
+    m_grid('box','fancy','tickdir','in','linest','none','ytick',0:2:40,'xtick',90:2:140);
+    m_text(lon_w+1,lat_n-1,['frontline: ',num2str(fnum),' junction: ',num2str(length(rj0))])
+    export_fig(fig_test_fn,'-png','-r200');
+    clear fig_test_fn
+end
+%% edge follow
+disp('edge following...')
+[M,bw_new] = edge_follow(bw,tgrad,grd,tangle);
+if fig_test
+    fig_test_fn = [fig_path_test,'sst_frontline_after_edge_follow.png'];
+    [rj1, cj1, re1, ce1] = findendsjunctions(bw_new);
+    lon = grd.lon_rho;
+    lat = grd.lat_rho;
+    temp_zl(grd.mask_rho==0) = NaN;
+    figure('visible','on')
+    m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]);
+    P=m_pcolor(lon,lat,temp_zl);
+    set(P,'LineStyle','none');
+    shading interp
+    hold on
+    % frontline pixel overlaid
+    [segment,fnum] = bwlabel(bw_new,8);
+    for ifr = 1:fnum
+        [row, col] = find(segment == ifr);
+        for ip = 1:length(row)
+            plon(ip) = lon(row(ip),col(ip));
+            plat(ip) = lat(row(ip),col(ip));
+        end
+        [x,y] = m_ll2xy(plon,plat);
+        scatter(x,y,line_width,'k','fill','o')
+        hold on
+        clear plon plat x y
+        clear row col
+    end
+    %  caxis([15 30])
+    colorbar
+    colormap(jet);
+    m_gshhs_i('patch',[.7 .7 .7],'edgecolor','none');
+    m_grid('box','fancy','tickdir','in','linest','none','ytick',0:2:40,'xtick',90:2:140);
+    m_text(lon_w+1,lat_n-1,['frontline: ',num2str(fnum),' junction: ',num2str(length(rj1))])
+    export_fig(fig_test_fn,'-png','-r200');
+    clear fig_test_fn
+end
+    
+%% edge merge
+disp('edge merging...')
+gapsize = 3;
+min_length = gapsize ;
+[M_merge,bw_merge] = edge_merge(tgrad,grd,tangle,bw_new,M,gapsize);
+if fig_test
+    fig_test_fn = [fig_path_test,'sst_frontline_after_edge_merge.png'];
+    [rj2, cj2, re2, ce2] = findendsjunctions(bw_merge);
+    lon = grd.lon_rho;
+    lat = grd.lat_rho;
+    temp_zl(grd.mask_rho==0) = NaN;
+    figure('visible','on')
+    m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]);
+    P=m_pcolor(lon,lat,temp_zl);
+    set(P,'LineStyle','none');
+    shading interp
+    hold on
+    % frontline pixel overlaid
+    [segment,fnum] = bwlabel(bw_merge,8);
+    for ifr = 1:fnum
+        [row, col] = find(segment == ifr);
+        for ip = 1:length(row)
+            plon(ip) = lon(row(ip),col(ip));
+            plat(ip) = lat(row(ip),col(ip));
+        end
+        [x,y] = m_ll2xy(plon,plat);
+        scatter(x,y,line_width,'k','fill','o')
+        hold on
+        clear plon plat x y
+        clear row col
+    end
+    %  caxis([15 30])
+    colorbar
+    colormap(jet);
+    m_gshhs_i('patch',[.7 .7 .7],'edgecolor','none');
+    m_grid('box','fancy','tickdir','in','linest','none','ytick',0:2:40,'xtick',90:2:140);
+    m_text(lon_w+1,lat_n-1,['frontline: ',num2str(fnum),' junction: ',num2str(length(rj2))])
+    export_fig(fig_test_fn,'-png','-r200');
+    clear fig_test_fn
+end
+
+%% calculate frontal line parameter
+lon = grd.lon_rho;
+lat = grd.lat_rho;
+fnum = length(M_merge);
+for ifr = 1:fnum
+    row = M_merge{ifr}.row;
+    col = M_merge{ifr}.col;
+    flen(ifr) = 0;
+    tgrad_sum = tgrad(row(1),col(1));
+    tgrad_num = 1;
+    for ip = 2:length(row)
+        flen(ifr) = flen(ifr) + spheric_dist(lat(row(ip-1),col(ip-1)),lat(row(ip),col(ip)), ...
+            lon(row(ip-1),col(ip-1)),lon(row(ip),col(ip)));
+        if isnan(tgrad(row(ip),col(ip))) ~=1
+            tgrad_sum = tgrad_sum+tgrad(row(ip),col(ip));
+            tgrad_num = tgrad_num + 1;
+        end
+    end
+    tgrad_mean(ifr) = tgrad_sum/tgrad_num;   
+    clear tgrad_sum row col
+end    
+%% post-processing 
+%提取长度大于flen_crit的锋面
+bw_flen=zeros(size(temp_zl));
+fnum = 0;
+for ifr=1:length(M_merge)
+    row=M_merge{ifr}.row;
+    col=M_merge{ifr}.col;
+    if flen(ifr) > flen_crit
+        fnum = fnum +1;
+        M_merge{ifr}.flen = flen(ifr);
+        M_merge{ifr}.tgrad_mean = tgrad_mean(ifr);
+        tfrontline{fnum}=M_merge{ifr};
+        for ip = 1:length(row)
+            bw_flen(row(ip),col(ip))=1;
+        end       
+    end
+end
+bw_final = bw_flen;
+if fig_test
+    fig_test_fn = [fig_path_test,'sst_frontline_after_extract_length.png'];
+    [rj3, cj3, re3, ce3] = findendsjunctions(bw_final);
+    lon = grd.lon_rho;
+    lat = grd.lat_rho;
+    temp_zl(grd.mask_rho==0) = NaN;
+    figure('visible','on')
+    m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]);
+    P=m_pcolor(lon,lat,temp_zl);
+    set(P,'LineStyle','none');
+    shading interp
+    hold on
+    % frontline pixel overlaid
+    [segment,fnum] = bwlabel(bw_final,8);
+    for ifr = 1:fnum
+        [row, col] = find(segment == ifr);
+        for ip = 1:length(row)
+            plon(ip) = lon(row(ip),col(ip));
+            plat(ip) = lat(row(ip),col(ip));
+        end
+        [x,y] = m_ll2xy(plon,plat);
+        scatter(x,y,line_width,'k','fill','o')
+        hold on
+        clear plon plat x y
+        clear row col
+    end
+    %  caxis([15 30])
+    colorbar
+    colormap(jet);
+    m_gshhs_i('patch',[.7 .7 .7],'edgecolor','none');
+    m_grid('box','fancy','tickdir','in','linest','none','ytick',0:2:40,'xtick',90:2:140);
+    m_text(lon_w+1,lat_n-1,['frontline: ',num2str(fnum),' junction: ',num2str(length(rj3))])
+    export_fig(fig_test_fn,'-png','-r200');
+    clear fig_test_fn
+end
+%%
+if logic_morph
+    % deal with morphology operator to connect neighbor segment
+    %bw2=bwmorph(bw1,'close',Inf);  % close操作会将非锋面点改为锋面点，在后续操作会报错，考虑将形态学变换放在后面   
+end
+%
+if fnum==0
+    tfrontline=[];
+    disp('no detected frontline')
+end
+%
+end

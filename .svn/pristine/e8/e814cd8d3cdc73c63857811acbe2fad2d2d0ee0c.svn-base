@@ -1,0 +1,100 @@
+function plot_front_figure(lon_w,lon_e,lat_s,lat_n,grd,temp_zl,tgrad,fronta,dtcrit,tfrontline,tfrontarea,plot_switch,tfname)
+disp('Plotting ...')
+if plot_switch==1 
+%% frontline overlaying on temp_zl
+minT=floor(nanmin(temp_zl(:)));
+maxT=ceil(nanmax(temp_zl(:)));
+L=minT:0.5:maxT;
+LL=minT:2:maxT;
+figure('visible','off')
+m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]); 
+P=m_pcolor(grd.lon_rho,grd.lat_rho,temp_zl);
+set(P,'LineStyle','none');
+shading interp
+hold on
+for m = 1:tfrontline.fnum
+    lon = eval(['tfrontline.f',num2str(m),'(:,1);']);
+    lat = eval(['tfrontline.f',num2str(m),'(:,2);']);
+    m_plot(lon,lat,'k','LineWidth',2)
+    hold on
+    clear lon lat
+end
+m_gshhs_i('patch',[.7 .7 .7],'edgecolor','none');
+m_grid('box','fancy','tickdir','in','linest','none','ytick',0:2:40,'xtick',90:2:140);
+caxis([minT maxT])
+colorbar
+colormap(jet);	   
+print ('-djpeg95','-r200',tfname)
+elseif plot_switch==2 
+%% frontarea overlaying on tgrad      
+figure('visible','off')
+m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]); 
+P=m_pcolor(grd.lon_rho,grd.lat_rho,tgrad);
+set(P,'LineStyle','none');
+shading interp
+hold on
+for m = 1:tfrontarea.fnum
+    lon = eval(['tfrontarea.f',num2str(m),'(:,1);']);
+    lat = eval(['tfrontarea.f',num2str(m),'(:,2);']);
+    m_plot(lon,lat,'b','LineWidth',0.5)
+    hold on
+    clear lon lat
+end
+m_gshhs_i('patch',[.7 .7 .7],'edgecolor','none');
+m_grid('box','fancy','tickdir','in','linest','none','ytick',0:2:40,'xtick',90:2:140);
+caxis([dtcrit 0.1])
+colorbar
+colormap(flipud(hot(32)));   
+print ('-djpeg95','-r200',tfname)
+elseif plot_switch==3 
+%% background (temp_zl) only
+minT=floor(nanmin(temp_zl(:)));
+maxT=ceil(nanmax(temp_zl(:)));
+L=minT:0.5:maxT;
+LL=minT:2:maxT;
+figure('visible','on')
+m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]); 
+P=m_pcolor(grd.lon_rho,grd.lat_rho,temp_zl);
+set(P,'LineStyle','none');
+shading interp
+hold on
+[C1,h1]=m_contour(grd.lon_rho,grd.lat_rho,temp_zl,L,'k');
+clabel(C1,h1,LL,'fontsize',10,'color','w','Rotation',0,'LabelSpacing',200,'LineWidth',0.5)
+hold on
+m_gshhs_i('patch',[.7 .7 .7],'edgecolor','none');
+m_grid('box','fancy','tickdir','in','linest','none','ytick',0:2:40,'xtick',90:2:140);
+caxis([minT maxT])
+colorbar
+colormap;	   
+print ('-djpeg95','-r200',tfname)
+elseif plot_switch==4 
+%% (1) with temp contour
+minT=floor(nanmin(temp_zl(:)));
+maxT=ceil(nanmax(temp_zl(:)));
+L=minT:0.5:maxT;
+LL=minT:2:maxT;
+figure('visible','on')
+m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]); 
+P=m_pcolor(grd.lon_rho,grd.lat_rho,temp_zl);
+set(P,'LineStyle','none');
+shading interp
+hold on
+[C1,h1]=m_contour(grd.lon_rho,grd.lat_rho,temp_zl,L,'k');
+clabel(C1,h1,LL,'fontsize',10,'color','w','Rotation',0,'LabelSpacing',200,'LineWidth',0.5)
+hold on
+for m = 1:tfrontline.fnum
+    lon = eval(['tfrontline.f',num2str(m),'(:,1);']);
+    lat = eval(['tfrontline.f',num2str(m),'(:,2);']);
+    m_plot(lon,lat,'r','LineWidth',2)
+    hold on
+    clear lon lat
+end
+m_gshhs_i('patch',[.7 .7 .7],'edgecolor','none');
+m_grid('box','fancy','tickdir','in','linest','none','ytick',0:2:40,'xtick',90:2:140);
+caxis([minT maxT])
+colorbar
+colormap;	   
+print ('-djpeg95','-r200',tfname)   
+end
+
+end

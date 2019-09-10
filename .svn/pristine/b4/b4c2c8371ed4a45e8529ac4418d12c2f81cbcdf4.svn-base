@@ -1,0 +1,66 @@
+function  [temp_zl,grd] = cora_prepare(fn,date_char,type,grd_path,lon_w,lon_e,lat_s,lat_n)
+% read CORA reanalysis data from NMDIS
+%
+%
+idm = 249; jdm=277; kdm=35;
+if strcmp(type,'daily_binary')
+    grd_fn = [grd_path,'CORA1.0_regional_grid.dat'];
+    depth_fn = [grd_path,'CORA1.0_regional_depth.dat'];
+    fid = fopen(grd_fn,'r');
+    dump1 = textscan(fid,'%s',6);
+    dump2 = textscan(fid,'%s',5);
+    data = textscan(fid,'%d %d %f %f %f');
+    lon_1d = data{3};
+    lat_1d = data{4};
+    depth_1d = data{5};
+    clear data
+    fclose(fid);
+    ln = reshape(lon_1d,jdm,idm);
+    lt = reshape(lat_1d,jdm,idm);
+    lon = ln';
+    lat = lt';
+    d = reshape(depth_1d,jdm,idm);
+    depth = d';
+    depth(depth==0) = NaN;
+    
+    % preprocess
+    mask_x=find(lon(:,1)>=lon_w & lon(:,1)<=lon_e);
+    mask_y=find(lat(1,:)>=lat_s & lat(1,:)<=lat_n);
+    
+    %Set xi and eta limitation
+    x_ind = min(mask_x);
+    x_len = length(mask_x);
+    y_ind = min(mask_y);
+    y_len =length(mask_y);
+    
+    grd.lon_rho=lon(mask_x,mask_y);
+    grd.lat_rho=lat(mask_x,mask_y);
+    
+    lon_diff=zeros(x_len,y_len);
+    lat_diff=zeros(x_len,y_len);
+    
+    lon_diff(1:end-1,:)=diff(grd.lon_rho,1,1);
+    lon_diff(end,:)=lon_diff(end-1,:);
+    lat_diff(:,1:end-1)=diff(grd.lat_rho,1,2);
+    lat_diff(:,end)=lat_diff(:,end-1);
+    
+    grd.pm=1./(cos(double(grd.lat_rho)*pi/180.)*111.1e3.*lon_diff);
+    grd.pn=ones(x_len,y_len)*1./(111.1e3.*lat_diff);
+    d0 = datenum(date_char,'yyyymmdd');
+    grd.time=d0;
+    fid = fopen(fn,'rb');
+    [tmp0,~] = fread(fid,'single');
+    fclose(fid);
+    tmp = tmp0(2:end-1);
+    zeta_1d = tmp(1:idm*jdm);
+    vv = reshape(tmp(idm*jdm+1:end),idm,jdm,kdm,4);
+    temp_zl = squeeze(vv(mask_x,mask_y,1,3));
+    clear vv
+    mask = ones(size(temp_zl));
+    mask(temp_zl>1e3)=0;
+    % temp_zl(mask==0)=NaN;
+    grd.mask_rho=mask;
+    %
+end
+
+end

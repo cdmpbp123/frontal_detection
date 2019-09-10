@@ -1,0 +1,30 @@
+function [lowThresh, highThresh] = thresh_select(thresh, low_freq,high_freq,magGrad,ThresholdRatio)
+%
+%   Local Function : thresh_select
+%
+[m,n] = size(magGrad);
+
+% Select the thresholds
+if isempty(thresh)
+    nonan_number = numel(find(~isnan(magGrad)));
+    [b x]=hist(magGrad(:),100);
+    cum_freq=cumsum(b/nonan_number);
+    c0 = find(cum_freq<low_freq,1,'last');
+    c1 = find(cum_freq>low_freq,1,'first');
+    lowThresh = interp1(cum_freq(c0:c1),x(c0:c1),low_freq);
+    clear c0 c1
+    c0 = find(cum_freq<high_freq,1,'last');
+    c1 = find(cum_freq>high_freq,1,'first');
+    highThresh = interp1(cum_freq(c0:c1),x(c0:c1),high_freq);
+    clear c0 c1
+elseif length(thresh)==1
+    highThresh = thresh;
+    lowThresh = ThresholdRatio*thresh;
+elseif length(thresh)==2
+    lowThresh = thresh(1);
+    highThresh = thresh(2);
+    if (lowThresh >= highThresh) || (highThresh >= 1)
+        error(message('images:edge:thresholdOutOfRange'))
+    end
+end
+end
