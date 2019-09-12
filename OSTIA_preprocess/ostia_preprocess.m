@@ -1,9 +1,8 @@
-function [temp_zl,grd] = ostia_preprocess(fn,lon_w,lon_e,lat_s,lat_n,smooth_type)
+function [temp_zl,grd] = ostia_preprocess(fn,lon_w,lon_e,lat_s,lat_n)
 %preprocess of OSTIA SST data
 %Input: 
 %   fn: OSTIA filename with full path
 %	lon_w,lon_e,lat_s,lat_n: domain boundary 
-%   smooth_type: preprocess smooth type ('average','gaussian','no_smooth')
 %Output:
 %   temp_zl: temperature output
 %   grd: struct variable of grid information 
@@ -44,8 +43,4 @@ d0=datenum(1981,01,01,00,00,00);
 d1=double(d0-1+ocean_time/3600/24);
 % format read by datenum
 grd.time=d1;
-fill_value = 0;
-% use global variable, to decrease parameter number
-global sigma N
-[temp_zl] = variable_preprocess(temp_zl,smooth_type,fill_value,sigma,N);  
 end
