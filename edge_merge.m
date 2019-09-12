@@ -133,9 +133,10 @@ for ip = 1:length(re)
         bw_single_new = bw_after_link;
     else
         % TBD: cut off shorter branch and remain the longer one
-        [bw_single_new] = extract_single_segment(bw_after_link);
+        %         [bw_single_new] = extract_single_segment(bw_after_link);
+        bw_single_new = bwmorph(bw_after_link,'thin'); % thinning again
+        bw_single_new = bwmorph(bw_single_new,'spur'); % remove spur
     end
-    bw_single_new = bwmorph(bw_single_new,'thin'); % thinning again
     bw_merge(bw_single_new == 1) = 1; %return back to bw_merge
     clear bw_single_new
 end  % end for loop ip 
