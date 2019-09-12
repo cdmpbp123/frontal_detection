@@ -136,7 +136,7 @@ for ifr = 1 : num
                         next_pcol = hit_col(next_index);
                         porder = [porder ip];
                     end
-                    skip_index = 1; % only 1 miss row/col, set skip_index = 1
+                    skip_index = [1:length(miss_row)]; % mark every miss row/col as skip_index
                 elseif length(hit_row) == 1 
                     % only 1 frontal points located in along-front direction
                     if hit_row == start_prow && hit_col == start_pcol  
@@ -180,8 +180,10 @@ for ifr = 1 : num
                 c_skip = miss_col(skip_index);
                 % after contour following, mark cutting points as bw_new = 2
                 % for separate contour 
-                if bw_new(r_skip,c_skip) == 0
-                    bw_new(r_skip,c_skip) = 2;
+                for ik = 1:length(skip_index)
+                    if bw_new(r_skip(ik),c_skip(ik)) == 0
+                        bw_new(r_skip(ik),c_skip(ik)) = 2;
+                    end
                 end
             end
         end
