@@ -95,10 +95,18 @@ for ifr = 1 : num
                     ff = ff+1;
                     break
                 end
-                % examine how many 8-connected neighbors located along the direction
+                % examine how many  8-connected neighbors (whose pixel value bw_new=1) located along the direction
+                % need to initialize L & LL
+                L = zeros(neigh_num(ip),2);
+                LL = zeros(neigh_num(ip),1);
                 for ii = 1:neigh_num(ip)
                     nrow = N{ip}.row(ii);
                     ncol = N{ip}.col(ii);
+                    % debug of re-assign value to pixel with bw_new = 2
+                    % reassign value will cause junctions
+                    if bw_new(nrow,ncol) == 2
+                        continue
+                    end
                     for jj =1:2
                         L(ii,jj) = ((rr(jj) == nrow) & (cc(jj) == ncol));
                     end
