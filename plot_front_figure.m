@@ -19,7 +19,7 @@ fnum = length(tfrontline);
 if strcmp(fig_type,'front_product')
     % image product
     % SST + frontline + frontarea with transparent shading
-    figure('visible','on')
+    figure('visible','on','color',[1 1 1])
     m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]);
     P=m_pcolor(lon,lat,temp_zl);
     set(P,'LineStyle','none');
@@ -37,7 +37,7 @@ if strcmp(fig_type,'front_product')
         end
         poly_lon = [lon_left fliplr(lon_right)];
         poly_lat = [lat_left fliplr(lat_right)];
-        m_patch(poly_lon,poly_lat,[.7 .7 .7],'FaceAlpha', .7,'EdgeColor','none')
+        m_patch(poly_lon,poly_lat,[.7 .7 .7],'FaceAlpha', .5,'EdgeColor','none')
         hold on
         m_plot(plon,plat,'k','LineWidth',1)
         hold on
@@ -48,10 +48,12 @@ if strcmp(fig_type,'front_product')
     %  caxis([15 30])
     colorbar
     colormap(jet);
-    m_gshhs_i('patch', [.8 .8 .8], 'edgecolor', 'none');
+%     m_gshhs_i('patch', [.8 .8 .8], 'edgecolor', 'none');
+    m_gshhs_i('patch', 'w', 'edgecolor', 'none');
     m_grid('box','fancy','tickdir','in','linest','none','ytick',0:2:40,'xtick',90:2:140);
     title(['SST ',dtime_str])
-    export_fig([fig_path,'/sst_front_',dtime_str],'-png','-r300');
+%     export_fig([fig_path,'/sst_front_',dtime_str],'-png','-r300');
+    print ('-dpng','-r300',[fig_path,'/sst_front_',dtime_str,'.png']);
 elseif strcmp(fig_type,'sst_frontline')
     %TBD
 end
