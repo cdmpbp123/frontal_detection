@@ -10,8 +10,8 @@ fig_path = varargin{5};
 % struct variable
 [grd, tfrontline, tfrontarea, info_area] = varargin{8:11};
 % figure parameter
-[fig_type] = varargin{12};
-
+[fig_type,fig_show] = varargin{12:13};
+% fig_show = 'off' /  'on'
 dtime_str = datestr(grd.time,'yyyymmdd');
 lon = grd.lon_rho;
 lat = grd.lat_rho;
@@ -19,7 +19,7 @@ fnum = length(tfrontline);
 if strcmp(fig_type,'front_product')
     % image product
     % SST + frontline + frontarea with transparent shading
-    figure('visible','on','color',[1 1 1])
+    figure('visible',fig_show,'color',[1 1 1])
     m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]);
     P=m_pcolor(lon,lat,temp_zl);
     set(P,'LineStyle','none');
@@ -50,7 +50,7 @@ if strcmp(fig_type,'front_product')
     colormap(jet);
 %     m_gshhs_i('patch', [.8 .8 .8], 'edgecolor', 'none');
     m_gshhs_i('patch', 'w', 'edgecolor', 'none');
-    m_grid('box','fancy','tickdir','in','linest','none','ytick',0:2:40,'xtick',90:2:140);
+    m_grid('box','fancy','tickdir','in','linest','none','ytick',-10:2:40,'xtick',90:5:150);
     title(['SST ',dtime_str])
 %     export_fig([fig_path,'/sst_front_',dtime_str],'-png','-r300');
     print ('-dpng','-r300',[fig_path,'/sst_front_',dtime_str,'.png']);
