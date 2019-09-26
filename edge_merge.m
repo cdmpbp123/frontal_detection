@@ -120,7 +120,7 @@ for ip = 1:length(re)
     % if we add some new front pixels between two edges
     % we need to give value for front magnitude and direction
     % to make sure followed function front_area run correctly
-    % simplest way£º give value of endpoints,
+    % simplest wayï¿½ï¿½ give value of endpoints,
     % TBD: further algorithm
     for ii = 1:length(rowT)
         tgrad(rowT(ii),colT(ii))  = tgrad(r0,c0);
@@ -178,12 +178,14 @@ if length(front_idx) < length(idx)
         end
         clear  hit_idx tmp_row tmp_col
     end
+    ep_row = hit_row;
+    ep_col = hit_col;
 end
 % then choose which points to merge from the results which already delete pixel value of endpoints at the further end
 if strcmp(type,'direction')
-    [merge_row,merge_col,~] = find_least_direction_change(r0,c0,hit_row,hit_col,tangle);
+    [merge_row,merge_col,~] = find_least_direction_change(r0,c0,ep_row,ep_col,tangle);
 elseif strcmp(type,'distance')
-    [merge_row,merge_col,~] = find_closest_distance(grd,r0,c0,hit_row,hit_col);
+    [merge_row,merge_col,~] = find_closest_distance(grd,r0,c0,ep_row,ep_col);
 elseif strcmp(type,'combine')
     % TBD
     % if angle for nearest endpoints large than 
