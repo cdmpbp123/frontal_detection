@@ -158,26 +158,32 @@ function [merge_row, merge_col] = find_merge_endpoint(M,grd,r0,c0,ep_row,ep_col,
 for ii = 1: length(ep_row)
     idx(ii) =  locate_front(M,ep_row(ii),ep_col(ii));
 end
-% deal with the condition that two endpoint of same edge both located
-% within the extent, if two endpoints in same edge,
-% only remain the one closer to center pixel
-[front_idx,ia,ic] = unique(idx,'stable');
+% deal with the condition that two endpoint of same edge both located within the extent
+% 
+% if two endpoints in same edge, only remain the one closer to center pixel
+% bug: meet some problem when discard further endpoints pixels for each segment 
+% debug: remain near endpoints for each segment  concatenate to new array
+[front_idx,~,~] = unique(idx,'stable');
 if length(front_idx) < length(idx)
+    hit_row = [];
+    hit_col = [];
     for ii = 1: length(front_idx)
         nn = find(idx == front_idx(ii));
+        tmp_row = ep_row(nn);
+        tmp_col = ep_col(nn);
         if length(nn) == 2
-             [rr,cc,hit_idx] = find_closest_distance(grd,r0,c0,ep_row(nn),ep_col(nn));
-             % delete pixel value of endpoints at the further end
-             miss_idx = find(nn ~= hit_idx); 
-             ep_row(miss_idx) = [];
-             ep_col(miss_idx) = [];
+            [~,~,hit_idx] = find_closest_distance(grd,r0,c0,tmp_row,tmp_col);
+            hit_row = cat(1,hit_row,tmp_row(hit_idx));
+            hit_col = cat(1,hit_col,tmp_col(hit_idx));
         end
+        clear  hit_idx tmp_row tmp_col
     end
 end
+% then choose which points to merge from the results which already delete pixel value of endpoints at the further end
 if strcmp(type,'direction')
-    [merge_row,merge_col,~] = find_least_direction_change(r0,c0,ep_row,ep_col,tangle);
+    [merge_row,merge_col,~] = find_least_direction_change(r0,c0,hit_row,hit_col,tangle);
 elseif strcmp(type,'distance')
-    [merge_row,merge_col,~] = find_closest_distance(grd,r0,c0,ep_row,ep_col);
+    [merge_row,merge_col,~] = find_closest_distance(grd,r0,c0,hit_row,hit_col);
 elseif strcmp(type,'combine')
     % TBD
     % if angle for nearest endpoints large than 
