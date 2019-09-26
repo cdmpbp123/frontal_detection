@@ -45,6 +45,12 @@ elseif strcmp(fntype,'avg')
         d1 = datenum(date_str,date_format);
         dd_format = datenum(datestr(dd,date_format),date_format);
         [~,iday] = find(dd_format == d1);
+        if isempty(iday)
+            disp('could not find requested date from ROMS avg data')
+            temp_zl = [];
+            grd = [];
+            return 
+        end
         temp = ncread(fn,'temp',[xi_ind eta_ind 1 iday],[xi_len eta_len Inf 1],[skip skip 1 1]);
         temp(temp>1e+9 | isnan(temp)) = fill_value;
     else % format such as scs_avg_yyyymmdd.nc
