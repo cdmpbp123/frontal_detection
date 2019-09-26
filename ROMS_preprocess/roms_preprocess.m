@@ -18,32 +18,37 @@ xi_ind=grd.xi_ind;
 eta_len=grd.eta_len;
 xi_len=grd.xi_len;
 % read ocean time
-    ocean_time=ncread(fn,'ocean_time'); 
-    tmp = ncreadatt(fn,'ocean_time','units');
-    S = regexp(tmp, '\s+', 'split');
-    date_string = [S{end-1},' ',S{end}];
-    d0=datenum(date_string,31);
+ocean_time=ncread(fn,'ocean_time');
+tmp = ncreadatt(fn,'ocean_time','units');
+S = regexp(tmp, '\s+', 'split');
+type = [S{1}];
+date_string = [S{end-1},' ',S{end}];
+d0=datenum(date_string,31);
+if strcmp(type,'hours')
+    %: TBD
+elseif strcmp(type,'seconds')
+        dd=double(d0+ocean_time/86400);
+end
 %
 if strcmp(fntype,'ini')
     %get time stamp of ncfile and dumping to grd file
     d1=d0+ocean_time/3600/24;
     %Read zeta,temperature/salinity, velocity from ROMS output
     zeta = ncread(fn,'zeta',[xi_ind eta_ind 1],[xi_len eta_len 1],[skip skip 1]);
-    % fill_value = ncreadatt(fn,'zeta','_FillValue');
     zeta(zeta>1e+9 | isnan(zeta)) = fill_value;
     temp = ncread(fn,'temp',[xi_ind eta_ind 1 1],[xi_len eta_len Inf Inf],[skip skip 1 1]);
     temp(temp>1e+9 | isnan(temp)) = fill_value;
 elseif strcmp(fntype,'avg')
-    if length(ocean_time) ~= 1
-        %concatenate 1-year data into one file
-        d1 = datenum(date_str,'yyyymmdd');
-        [yyyy,mm,dd] = datevec(d1);
-        d_start = datenum(yyyy,1,1,0,0,0);
-        iday  = d1 - d_start + 1;
+    if length(ocean_time) ~= 1 %concatenate 1-year data into one file
+        % change to read index from ocean_time attribute, to avoid avg data bug 
+        date_format = 'yyyymmdd';
+        d1 = datenum(date_str,date_format);
+        dd_format = datenum(datestr(dd,date_format),date_format);
+        [~,iday] = find(dd_format == d1);
         temp = ncread(fn,'temp',[xi_ind eta_ind 1 iday],[xi_len eta_len Inf 1],[skip skip 1 1]);
         temp(temp>1e+9 | isnan(temp)) = fill_value;
-    else
-        % scs_avg_yyyymmdd.nc
+    else % format such as scs_avg_yyyymmdd.nc
+        % TBD
     end
 end
 grd.time=d1;
