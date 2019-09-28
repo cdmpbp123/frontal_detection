@@ -60,6 +60,7 @@ for ifr = 1 : num
             prow = next_prow;
             pcol = next_pcol;
             [ip] = find(row(:) == next_prow & col(:) == next_pcol);
+            % when find detached pixel, finish this following, begin next find
             if bw_new(row(ip),col(ip)) == 2
                 ff = ff +1;
                 break
@@ -136,7 +137,9 @@ for ifr = 1 : num
                         %change along-front pixel bw value
                         bw_new(hit_row(1),hit_col(1)) = 1;
                         bw_new(hit_row(2),hit_col(2)) = 1;
-                        porder(end) = [] ;
+                        if length(porder) > 1
+                            porder(end) = [] ;
+                        end
                         ff = ff+1;
                         break
                     else
@@ -182,17 +185,18 @@ for ifr = 1 : num
                     porder =  [porder ip];
                     skip_index = find(miss_row(:) ~= next_prow | miss_col(:) ~= next_pcol);
                 end
-                start_prow = prow;
-                start_pcol = pcol;
                 r_skip = miss_row(skip_index);
                 c_skip = miss_col(skip_index);
-                % after contour following, mark cutting points as bw_new = 2
-                % for separate contour 
+                % after contour following, mark cutting points as bw_new = 2 for separate contour 
                 for ik = 1:length(skip_index)
-                    if bw_new(r_skip(ik),c_skip(ik)) == 0
+                    if bw_new(r_skip(ik),c_skip(ik)) == 0 || bw_new(r_skip(ik),c_skip(ik)) == 1 
+                        % maybe bug here, modify front pixel to detach pixel may break the pattern
                         bw_new(r_skip(ik),c_skip(ik)) = 2;
                     end
                 end
+                % prepare for next loop m
+                start_prow = prow;
+                start_pcol = pcol;
             end
         end
         M{ff}.row=row(porder);
@@ -216,7 +220,9 @@ M = M_filter;
 % check edge follow algorithm
 [rj, cj, ~, ~] = findendsjunctions(bw_new);
 if isempty(rj) ~= 1 || isempty(cj) ~= 1
-    error('error: after edge following, junction points should no longer exist')
+    disp('maybe a bug here, after edge following, junction points should no longer exist')
+    disp([ 'rj=',num2str(rj) , 'cj=',num2str(cj)])
+%     error('error: after edge following, junction points should no longer exist')
 end
 
 end % end main function
