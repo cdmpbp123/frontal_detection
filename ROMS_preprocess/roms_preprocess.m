@@ -44,7 +44,7 @@ elseif strcmp(fntype,'avg')
         date_format = 'yyyymmdd';
         d1 = datenum(date_str,date_format);
         dd_format = datenum(datestr(dd,date_format),date_format);
-        [~,iday] = find(dd_format == d1);
+        iday = find(dd_format == d1);
         if isempty(iday)
             disp('could not find requested date from ROMS avg data')
             temp_zl = [];
@@ -57,7 +57,9 @@ elseif strcmp(fntype,'avg')
         % TBD
     end
 end
+% add datetime to grd 
 grd.time=d1;
+%
 %switch temp_extract method
 temp_switch=2;
 switch temp_switch
