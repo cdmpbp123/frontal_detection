@@ -69,8 +69,8 @@ for ifr =1:fnum
                     prow=next_prow;
                     pcol=next_pcol;
                 else
-                    frow = [frow next_prow];
-                    fcol = [fcol next_pcol];
+%                     frow = [frow next_prow];
+%                     fcol = [fcol next_pcol];
                     break % quit loop:m
                 end
             end
