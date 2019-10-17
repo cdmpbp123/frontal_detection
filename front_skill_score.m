@@ -1,18 +1,18 @@
-function [bias, FTS, FFAR, FPO, FFA] = front_skill_score(bw_detect, bw_true_value)
+function [bias, TS, FAR, MR, FA, DR] = front_skill_score(bw_detect, bw_true_value)
 %{
-calculate front detection algorithm skill score
-detectability
-N11: detect yes; true value yes
-N10: detect yes; true value no
-N01: detect no; true value yes
-N00: detect no; true value no
+calculate front detection algorithm detectability introducing skill scores from meterology
+categorical charts of front detection:
+    N11: detect yes; true value yes
+    N10: detect yes; true value no
+    N01: detect no; true value yes
+    N00: detect no; true value no
 Skill score variable:
-Bias: ratio that detect failure to frontal true value
-FTS(Frontal Threat Score): ratio that right detection to total detection
-FFAR(Frontal false alarm ratio)
-FPO(frontal false positive)
-FFA(frontal detect accuracy)
-
+    Bias: ratio of detect failure to frontal true value， (N01 + N10) / (N11 + N01);
+    TS(Threat Score): ratio of correct detection to total detection and true value
+    FAR(False Alarm Rate): ratio of false detected to total detected pixels
+    MR(Miss Rate): ratios of miss detected to total true value pixels
+    FA(Forecast Accuracy): ratio of correct detection to total detection
+    DR(Detectability Rate): ratio of total detect pixels to total true value pixels
 %}
 if length(bw_detect(:)) ~= length(bw_true_value(:))
     error('length of detected result and true value do not match!')
@@ -37,10 +37,14 @@ for i = 1:length(bw_detect(:))
 end
 
 bias = (N01 + N10) / (N11 + N01);
-FTS = N11 / (N11 + N01 + N10);
-FFAR = N10 / (N11 + N10);
-FPO = N01 / (N11 + N01);
-FFA = N11 / (N11 + N10);
+TS = N11 / (N11 + N01 + N10);
+FAR = N10 / (N11 + N10);
+MR = N01 / (N11 + N01);
+FA = N11 / (N11 + N10);
 
+num_true = length(find(bw_true_value(:) == 1));
+num_detect = length(find(bw_detect(:) == 1));
+% total detect rate
+DR = num_detect / num_true;
 
 end
