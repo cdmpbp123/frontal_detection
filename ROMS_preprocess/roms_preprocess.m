@@ -27,7 +27,7 @@ d0=datenum(date_string,31);
 if strcmp(type,'hours')
     %: TBD
 elseif strcmp(type,'seconds')
-        dd=double(d0+ocean_time/86400);
+        datenum_oceantime=double(d0+ocean_time/86400);
 end
 %
 if strcmp(fntype,'ini')
@@ -42,9 +42,12 @@ elseif strcmp(fntype,'avg')
     if length(ocean_time) ~= 1 %concatenate 1-year data into one file
         % change to read index from ocean_time attribute, to avoid avg data bug 
         date_format = 'yyyymmdd';
+        datestr_oceantime = datestr(datenum_oceantime,date_format);
+        datecell = cellstr(datestr_oceantime);
+        iday  = find(strcmp(datecell, date_str),1);
         d1 = datenum(date_str,date_format);
-        dd_format = datenum(datestr(dd,date_format),date_format);
-        iday = find(dd_format == d1);
+%         dd_format = datenum(datestr(dd,date_format),date_format);
+%         iday = find(dd_format == d1);
         if isempty(iday)
             disp('could not find requested date from ROMS avg data')
             temp_zl = [];
