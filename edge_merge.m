@@ -120,7 +120,7 @@ for ip = 1:length(re)
     % if we add some new front pixels between two edges
     % we need to give value for front magnitude and direction
     % to make sure followed function front_area run correctly
-    % simplest way�� give value of endpoints,
+    % simplest way give value of endpoints,
     % TBD: further algorithm
     for ii = 1:length(rowT)
         tgrad(rowT(ii),colT(ii))  = tgrad(r0,c0);
@@ -143,8 +143,6 @@ end  % end for loop ip
 [rj, cj, re, ce] = findendsjunctions(bw_merge);
 % update M_merge by calling edge_follow again
 [M_merge,bw_merge] = edge_follow(bw_merge,tgrad,grd,tangle);
-% set minimum pixel length threshold
-[bw_merge,M_merge] = edge_filter(bw_merge,M_merge,min_len);
 end  % end main function
 
 function [merge_row, merge_col] = find_merge_endpoint(M,grd,r0,c0,ep_row,ep_col,tangle,type)

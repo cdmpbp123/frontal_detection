@@ -1,6 +1,6 @@
-%% calculate parameter of frontal line: mean frontal strength and front length
-% other parameter to be finished
 function [M] = cal_front_parameter(M,grd,tgrad)
+% calculate parameter of frontal line: mean frontal strength and front length
+% other parameter to be finished
     lon = grd.lon_rho;
     lat = grd.lat_rho;
     fnum = length(M);

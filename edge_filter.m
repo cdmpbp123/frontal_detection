@@ -1,4 +1,4 @@
-function [bw_filter,M_filter] = edge_filter(bw,M,filter_pixel_length)
+function [M_filter,bw_filter] = edge_filter(M,bw,filter_pixel_length)
 % edge_filter
 %
 fr_num_filter = 1;
@@ -15,4 +15,4 @@ for ifr = 1:length(M)
     end
 end
 
-end  % end function edge_filter
+end  % end function 

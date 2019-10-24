@@ -27,10 +27,9 @@ disp('edge following...')
 disp('edge merging...')
 gapsize = 3;
 [M_merge,bw_merge,tgrad_new,tangle_new] = edge_merge(tgrad,grd,tangle,bw_new,M,gapsize);
-%% calculate frontal line parameter
-[M_merge] = cal_front_parameter(M_merge,grd,tgrad_new);
 %% post_processing
-[tfrontline,bw_final] = edge_postprocessing(M_merge,bw_merge,grd,flen_crit,logic_morph);
+[tfrontline,bw_final,length_thresh] = edge_postprocessing(M_merge,bw_merge,grd,flen_crit,logic_morph);
+thresh_out(3) = length_thresh; 
 %%
 fnum = length(tfrontline);
 if fnum==0
