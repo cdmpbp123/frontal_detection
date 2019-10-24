@@ -6,11 +6,11 @@ function plot_front_figure(varargin)
 % figure name
 fig_fn = varargin{5};
 % bw & sst variable (array)
-[bw, temp_zl] = varargin{6:7};
+[bw_line, bw_area, temp_zl] = varargin{6:8};
 % struct variable
-[grd, tfrontline, tfrontarea, info_area] = varargin{8:11};
+[grd, tfrontline, tfrontarea, front_parameter] = varargin{9:12};
 % figure parameter
-[data_type,fig_type,fig_show] = varargin{12:14};
+[data_type,fig_type,fig_show] = varargin{13:15};
 % fig_show = 'off' /  'on'
 dtime_str = datestr(grd.time,'yyyymmdd');
 lon = grd.lon_rho;
@@ -24,7 +24,6 @@ minT = nanmin(temp_zl(:));
 maxT = nanmax(temp_zl(:));
 if strcmp(fig_type,'front_product')
     % image product: SST + frontline + frontarea with transparent shading
-    bw_area = ones(nx,ny)*NaN;
     figure('visible',fig_show,'color',[1 1 1])
     m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]);
     P0=m_pcolor(lon,lat,temp_zl);
@@ -34,30 +33,16 @@ if strcmp(fig_type,'front_product')
     % frontline pixel overlaid
     for ifr = 1:fnum
         for ip = 1:length(tfrontline{ifr}.row)
-            plon(ip) = lon(tfrontline{ifr}.row(ip),tfrontline{ifr}.col(ip));
-            plat(ip) = lat(tfrontline{ifr}.row(ip),tfrontline{ifr}.col(ip));
-            lon_left(ip) = tfrontarea{ifr}{ip}.lon(1);
-            lat_left(ip) = tfrontarea{ifr}{ip}.lat(1);
-            lon_right(ip) = tfrontarea{ifr}{ip}.lon(end);
-            lat_right(ip) = tfrontarea{ifr}{ip}.lat(end);
-        end
-        poly_lon = [lon_left fliplr(lon_right)];
-        poly_lat = [lat_left fliplr(lat_right)];
-        patch_index = inpolygon(lon, lat, poly_lon, poly_lat);
-        [row_area, col_area] = find(patch_index == 1);
-        for ii = 1:length(row_area)
-            bw_area(row_area(ii), col_area(ii)) = 1;
+            plon(ip) = tfrontline{ifr}.lon(ip);
+            plat(ip) = tfrontline{ifr}.lat(ip);
         end
         hold on
         m_plot(plon,plat,'k','LineWidth',line_width)
         hold on
-        clear poly_lon poly_lat
-        clear lon_left lat_left lon_right lat_right
         clear plon plat
     end
-    %     % no need to use bwperim function
-    %     contour_bw = bwperim(bw_area);
     hold on
+    bw_area(bw_area == 0) = NaN;
     P1=m_pcolor(lon,lat,bw_area);
     set(P1,'LineStyle','none','FaceAlpha',face_alpha);
     shading interp
@@ -83,8 +68,8 @@ elseif strcmp(fig_type,'sst_frontline')
     % frontline pixel overlaid
     for ifr = 1:fnum
         for ip = 1:length(tfrontline{ifr}.row)
-            plon(ip) = lon(tfrontline{ifr}.row(ip),tfrontline{ifr}.col(ip));
-            plat(ip) = lat(tfrontline{ifr}.row(ip),tfrontline{ifr}.col(ip));
+            plon(ip) = tfrontline{ifr}.lon(ip);
+            plat(ip) = tfrontline{ifr}.lat(ip);
         end
         m_plot(plon,plat,'k','LineWidth',line_width)
         hold on
