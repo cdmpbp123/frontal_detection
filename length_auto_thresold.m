@@ -10,9 +10,10 @@ for ifr = 1:fnum
 end
 [b,x]=hist(front_length,100);
 cum_freq=cumsum(b/fnum);
-c0 = find(cum_freq<freq,1,'last');
+c0 = find(cum_freq<=freq,1,'last');
 c1 = find(cum_freq>freq,1,'first');
 length_thresh = interp1(cum_freq(c0:c1),x(c0:c1),freq);
+length_thresh = double(length_thresh);
 if isempty(figname)~=1
     ymin = 50;
     ymax = 100;

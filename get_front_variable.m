@@ -9,4 +9,6 @@ tgrad = sqrt(txgrad .^ 2 + tygrad .^ 2);
 tangle = atan2d(tygrad,txgrad); % across-front direction
 mk = find( tangle < 0 );
 tangle(mk) = tangle(mk) + 360 ;
+tgrad = double(tgrad);
+tangle = double(tangle);
 end
