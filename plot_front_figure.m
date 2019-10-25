@@ -16,7 +16,6 @@ dtime_str = datestr(grd.time,'yyyymmdd');
 lon = grd.lon_rho;
 lat = grd.lat_rho;
 fnum = length(tfrontline);
-[nx,ny] = size(bw);
 %figure setup
 line_width = 0.5;
 face_alpha = 0.5;

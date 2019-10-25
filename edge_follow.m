@@ -212,6 +212,11 @@ for ifr = 1 : num
     clear N
 end
 bw_new(bw_new == 2) = 0;
+% add edge filter	
+filter_pixel_length = 1;	
+[M_filter,bw_filter] = edge_filter(M,bw_new,filter_pixel_length);	
+bw_new = bw_filter;	
+M = M_filter;
 % check edge follow algorithm
 [rj, cj, ~, ~] = findendsjunctions(bw_new);
 if isempty(rj) ~= 1 || isempty(cj) ~= 1
