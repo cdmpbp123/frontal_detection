@@ -53,8 +53,8 @@ grd.eta_len=eta_len;
 grd.xi_len=xi_len;
 %0.08 is horizontal resolution for Mercator 1/12 degree dataset  
 resolution=0.08;
-pm=1./(cos(lat*pi/180.)*111.1e3*resolution); 
-pn=ones(size(lon))*1./(111.1e3*resolution);
+pm=double(1./(cos(grd.lat_rho*pi/180.)*111.1e3*resolution)); 
+pn=double(ones(size(grd.lon_rho))*1./(111.1e3*resolution));
 grd.pm=pm;
 grd.pn=pn;
 %get time stamp of ncfile based on netCDF variable attribute 
