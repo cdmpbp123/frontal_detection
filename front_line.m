@@ -16,6 +16,10 @@ function [tfrontline,bw_final,thresh_out,tgrad_new,tangle_new] = front_line(temp
 %% edge localization
 disp('edge localization...')
 [bw, thresh_out] = edge_localization(temp_zl,tgrad,tangle,thresh_in);
+%% morphlogical processing
+bw = bwmorph(bw,'clean'); %remove isolated frontal pixels
+bw = bwmorph(bw,'hbreak'); % remove H-connect pixels
+bw = bwmorph(bw,'thin', Inf); %Make sure that edges are thinned or nearly thinned
 %% edge follow
 disp('edge following...')
 [M,bw_new] = edge_follow(bw,tgrad,grd,tangle);

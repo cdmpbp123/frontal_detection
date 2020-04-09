@@ -16,13 +16,6 @@ ThresholdRatio = 0.4;
 low_freq = 0.8;
 high_freq = 0.9;
 % -----------------------------------------------------------%
-global fig_path_test 
-global fig_test
-if fig_test
-    figname = [fig_path_test,'autothreshold_histogram.png'];
-else
-    figname = [];
-end
 % Determine Hysteresis Thresholds
 [lowThresh, highThresh] = thresh_select(thresh_in, low_freq, high_freq, magGrad, ThresholdRatio,figname);
 thresh_out = [lowThresh, highThresh];
@@ -90,61 +83,6 @@ for im = 2:(m-1)
             end
         end
     end
-end
-global test_morph
-if test_morph
-    basedir = ['D:\lomf\frontal_detect\'];
-    fig_path = [basedir,'\Fig\test\edge_localization\'];
-    mkdir(fig_path)
-    [ri0, ci0] = findisolatedpixels(eout);
-    [rj0, cj0, re0, ce0] = findendsjunctions(eout);
-    disp('raw image')
-    disp(['isolate pixels= ',num2str(length(ri0))])
-    disp(['junction pixels= ',num2str(length(rj0))])
-    disp(['endpoint= ',num2str(length(re0))])
-    figure;
-    imshow(rot90(eout))
-    title(['isolate pixels= ',num2str(length(ri0)),' ',...
-        'junction pixels= ',num2str(length(rj0))])
-    export_fig([fig_path,'raw_image.png'],'-png','-r200');
-    %necessary morphological processing to detect frontal line
-    eout = bwmorph(eout,'clean'); %remove isolated frontal pixels
-    [ri0, ci0] = findisolatedpixels(eout);
-    [rj0, cj0, re0, ce0] = findendsjunctions(eout);
-    disp('after cleaning')
-    disp(['isolate pixels= ',num2str(length(ri0))])
-    disp(['junction pixels= ',num2str(length(rj0))])
-    disp(['endpoint= ',num2str(length(re0))])
-    figure;
-    imshow(rot90(eout))
-    title(['isolate pixels= ',num2str(length(ri0)),' ',...
-        'junction pixels= ',num2str(length(rj0))])
-    export_fig([fig_path,'cleaning.png'],'-png','-r200')
-    %
-    eout = bwmorph(eout,'hbreak'); % remove H-connect pixels
-    % [ri0, ci0] = findisolatedpixels(eout);
-    % [rj0, cj0, re0, ce0] = findendsjunctions(eout);
-    % disp('after H-break')
-    % disp(['isolate pixels= ',num2str(length(ri0))])
-    % disp(['junction pixels= ',num2str(length(rj0))])
-    % disp(['endpoint= ',num2str(length(re0))])
-    eout = bwmorph(eout,'thin', Inf); %Make sure that edges are thinned or nearly thinned
-    [ri0, ci0] = findisolatedpixels(eout);
-    [rj0, cj0, re0, ce0] = findendsjunctions(eout);
-    disp('after thinning')
-    disp(['isolate pixels= ',num2str(length(ri0))])
-    disp(['junction pixels= ',num2str(length(rj0))])
-    disp(['endpoint= ',num2str(length(re0))])
-    figure;
-    imshow(rot90(eout))
-    title(['isolate pixels= ',num2str(length(ri0)),' ',...
-        'junction pixels= ',num2str(length(rj0))])
-    export_fig([fig_path,'thinning.png'],'-png','-r200')
-else
-    %necessary morphological processing to detect frontal line
-    eout = bwmorph(eout,'clean'); %remove isolated frontal pixels
-    eout = bwmorph(eout,'hbreak'); % remove H-connect pixels
-    eout = bwmorph(eout,'thin', Inf); %Make sure that edges are thinned or nearly thinned
 end
 
 end
