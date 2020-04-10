@@ -1,4 +1,4 @@
-function [lowThresh, highThresh] = thresh_select(thresh, LowFreq,HighFreq,magGrad,ThresholdRatio,figname)
+function [lowThresh, highThresh] = thresh_select(thresh, LowFreq,HighFreq,magGrad,ThresholdRatio)
 %
 %   Local Function : thresh_select
 %
@@ -19,27 +19,6 @@ if isempty(thresh)
     c1 = find(cum_freq>HighFreq,1,'first');
     highThresh = interp1(cum_freq(c0:c1),x(c0:c1),HighFreq);
     clear c0 c1
-    if isempty(figname)~=1
-        ymin = 50;
-        ymax = 100;
-        LowFreqPercent = LowFreq*100;
-        HighFreqPercent = HighFreq*100;
-        figure;
-        plot(x,cum_freq*100,'LineWidth',2)
-        set(gca,'YLim',[ymin ymax])
-        xlabel('gradient (\circC/km)','FontSize',12)
-        ylabel('Percent','FontSize',12)
-        hold on
-        plot([lowThresh lowThresh],[ymin LowFreqPercent],'LineStyle','-','Color','k','LineWidth',1)
-        plot([0 lowThresh],[LowFreqPercent LowFreqPercent],'LineStyle','-','Color','k','LineWidth',1)
-        hold on
-        plot([highThresh highThresh],[ymin HighFreqPercent],'LineStyle','-','Color','r','LineWidth',1)
-        plot([0 highThresh],[HighFreqPercent HighFreqPercent],'LineStyle','-','Color','r','LineWidth',1)
-        t_string = ['low thresh = ',num2str(lowThresh,'%4.3f'),', high thresh =',num2str(highThresh,'%4.3f')];
-        title(t_string,'FontSize',14)
-        print ('-djpeg95','-r300',figname);
-        close all
-    end
 elseif length(thresh)==1
     highThresh = thresh;
     lowThresh = ThresholdRatio*thresh;

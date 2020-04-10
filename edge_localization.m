@@ -17,7 +17,7 @@ low_freq = 0.8;
 high_freq = 0.9;
 % -----------------------------------------------------------%
 % Determine Hysteresis Thresholds
-[lowThresh, highThresh] = thresh_select(thresh_in, low_freq, high_freq, magGrad, ThresholdRatio,figname);
+[lowThresh, highThresh] = thresh_select(thresh_in, low_freq, high_freq, magGrad, ThresholdRatio);
 thresh_out = [lowThresh, highThresh];
 % edge localization
 canny1=zeros(m,n);
