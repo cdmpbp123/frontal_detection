@@ -14,19 +14,28 @@ function [tfrontline,bw_final,thresh_out,tgrad_new,tangle_new] = front_line(temp
 %% calculate front magnitude and direction
 [tgrad, tangle] = get_front_variable(temp_zl,grd);
 %% edge localization
-disp('edge localization...')
+disp('edge localization...start')
+tic
 [bw, thresh_out] = edge_localization(temp_zl,tgrad,tangle,thresh_in);
+toc
+disp('edge localization...finish')
 %% morphlogical processing
 bw = bwmorph(bw,'clean'); %remove isolated frontal pixels
 bw = bwmorph(bw,'hbreak'); % remove H-connect pixels
 bw = bwmorph(bw,'thin', Inf); %Make sure that edges are thinned or nearly thinned
 %% edge follow
-disp('edge following...')
+disp('edge following...start')
+tic
 [M,bw_new] = edge_follow(bw,tgrad,grd,tangle);
+toc
+disp('edge following...stop')
 %% edge merge
-disp('edge merging...')
+disp('edge merging... start')
+tic
 gapsize = 3;
 [M_merge,bw_merge,tgrad_new,tangle_new] = edge_merge(tgrad,grd,tangle,bw_new,M,gapsize);
+toc
+disp('edge merging... stop')
 %% edge postprocessing
 [tfrontline,bw_final,length_thresh] = edge_postprocessing(M_merge,bw_merge,grd,flen_crit,logic_morph);
 thresh_out(3) = length_thresh; 

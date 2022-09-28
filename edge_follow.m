@@ -213,7 +213,7 @@ for ifr = 1 : num
 end
 bw_new(bw_new == 2) = 0;
 % add edge filter	
-filter_pixel_length = 1;	
+filter_pixel_length = 5;	
 [M_filter,bw_filter] = edge_filter(M,bw_new,filter_pixel_length);	
 bw_new = bw_filter;	
 M = M_filter;

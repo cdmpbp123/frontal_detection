@@ -1,18 +1,20 @@
 function [lon_bin, lat_bin, mask_bin, mask_cell,var_bin] = grid_to_bin(lon,lat,mask,bin_resolution,lon_w,lon_e,lat_s,lat_n,var_grid);
 %
 %
-effect_mask_ratio = 0.5; % ratio to determine valid mask_bin
+effect_mask_ratio = 0.2; % ratio to determine valid mask_bin
 mid = 0.5*bin_resolution;
 % build grid between the raw grid
 ln = ceil(lon_w):bin_resolution:floor(lon_e);
 lt = ceil(lat_s):bin_resolution:floor(lat_n);
+[lat_end, lon_end] = meshgrid(lt,ln);
 ln_mid = ceil(lon_w)+mid:bin_resolution:floor(lon_e)-mid;
 lt_mid = ceil(lat_s)+mid:bin_resolution:floor(lat_n)-mid;
-[lat_bin, lon_bin] = meshgrid(lt_mid,ln_mid);
+[lat_mid, lon_mid] = meshgrid(lt_mid,ln_mid);
 %
 nx_bin = length(ln_mid);
 ny_bin = length(lt_mid);
-
+lon_bin = lon_end(1:end-1,1:end-1);
+lat_bin = lat_end(1:end-1,1:end-1);
 % using cell struct to mark all global index for every bin
 mask_cell = cell(nx_bin,ny_bin);
 for ixb = 1:nx_bin
@@ -24,9 +26,13 @@ for ixb = 1:nx_bin
         xx = find(lon(:,1)>=brdyW & lon(:,1)<brdyE);
         yy = find(lat(1,:)>=brdyS & lat(1,:)<brdyN);
         mask_local  = mask(xx,yy);
+        lon_local = lon(xx,yy);
+        lat_local = lat(xx,yy);
         nonan_num = length(find(mask_local(:)==1));
         mask_cell{ixb,iyb}.xx = xx;
         mask_cell{ixb,iyb}.yy = yy;
+        mask_cell{ixb,iyb}.lon = lon_local;
+        mask_cell{ixb,iyb}.lat = lat_local;
         mask_cell{ixb,iyb}.nonan_num = nonan_num;
         clear brdyN brdyS brdyW brdyE
         clear xx yy

@@ -11,6 +11,7 @@ fig_fn = varargin{5};
 [grd, tfrontline, tfrontarea, front_parameter] = varargin{9:12};
 % figure parameter
 [data_type,fig_type,fig_show] = varargin{13:15};
+[tgrad, tangle] = get_front_variable(temp_zl,grd);
 % fig_show = 'off' /  'on'
 dtime_str = datestr(grd.time,'yyyymmdd');
 lon = grd.lon_rho;
@@ -53,9 +54,10 @@ if strcmp(fig_type,'front_product')
     colormap(mycolormap)
     caxis([minT maxT])
     m_gshhs_i('patch', 'w', 'edgecolor', 'none');
-    m_grid('box','fancy','tickdir','in','linest','none','ytick',-10:5:40,'xtick',90:5:150);
-    title([data_type,' frontal product: ',dtime_str])
+    m_grid('box','fancy','tickdir','in','linest','none','ytick',-80:5:80,'xtick',-180:10:180);
+    title(['frontal product: ',dtime_str])
     export_fig(fig_fn,'-png','-r300');
+
 elseif strcmp(fig_type,'sst_frontline')
     % SST + frontline
     figure('visible',fig_show,'color',[1 1 1])
@@ -78,8 +80,36 @@ elseif strcmp(fig_type,'sst_frontline')
     colorbar
     colormap(jet);
     m_gshhs_i('patch', 'w', 'edgecolor', 'none');
-    m_grid('box','fancy','tickdir','in','linest','none','ytick',-10:5:40,'xtick',90:5:150);
-    title([data_type,' frontal line overlayed with SST ',dtime_str])
+    m_grid('box','fancy','tickdir','in','linest','none','ytick',-80:5:80,'xtick',-180:10:180);
+    title(['frontal line overlayed with SST ',dtime_str])
+    export_fig(fig_fn,'-png','-r300');
+
+elseif strcmp(fig_type,'grad_frontline')
+    th=0.02;
+    tgrad(tgrad<th | bw_area==0) = NaN;
+    % gradient + frontline
+    figure('visible',fig_show,'color',[1 1 1])
+    m_proj('Miller','lat',[lat_s lat_n],'lon',[lon_w lon_e]);
+    P=m_pcolor(lon,lat,tgrad);
+    set(P,'LineStyle','none');
+    shading interp
+    hold on
+    % frontline pixel overlaid
+    for ifr = 1:fnum
+        for ip = 1:length(tfrontline{ifr}.row)
+            plon(ip) = tfrontline{ifr}.lon(ip);
+            plat(ip) = tfrontline{ifr}.lat(ip);
+        end
+        m_plot(plon,plat,'k','LineWidth',line_width)
+        hold on
+        clear plon plat
+    end
+    caxis([th 0.2])
+    colorbar
+    colormap(jet);
+    m_gshhs_i('patch',[.8 .8 .8] , 'edgecolor', 'none');
+    m_grid('box','fancy','tickdir','in','linest','none','ytick',-80:5:80,'xtick',-180:10:180);
+    title(['frontal line overlayed with SST gradient ',dtime_str])
     export_fig(fig_fn,'-png','-r300');
 end
 
